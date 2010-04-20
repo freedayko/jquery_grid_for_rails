@@ -1,9 +1,10 @@
 module Hexagile
   module JqueryGridForRails
     def jquery_grid(id, options={})
-      grid_data = YAML::load_file("#{RAILS_ROOT}/config/jquery_grid/#{id}.yml")
+      yaml = ERB.new(File.open("#{RAILS_ROOT}/config/jquery_grid/#{id}.yml.erb", 'r').read).result(controller.send(:binding))
+      grid_data = YAML::load(yaml)
 
-      jqgrid(options[:title]||id.to_s,id.to_s,options[:url],grid_data.delete(:columns),grid_data)
+      jqgrid(options[:title]||id.to_s,id.to_s,options.delete(:url),grid_data.delete(:columns),grid_data.merge(options))
     end
 
     def gen_columns(columns)
@@ -11,7 +12,7 @@ module Hexagile
       col_model = '['
       columns.each do |c|
         col_names << "'#{c.delete(:label)}',"
-        col_model << "{%s}," % (c.map{|a,b|"#{a.to_s}:'#{b.to_s}'"} * ', ')
+        col_model << "{%s}," % (c.map{|a,b|"#{a.to_s}: #{b.to_json}"} * ', ')
       end
       col_names.chop! << "]"
       col_model.chop! << "]"
@@ -25,14 +26,14 @@ module Hexagile
         {
           :rows_per_page       => '25',
           :sort_column         => '',
-          :sort_order          => '',
-          :height              => '500',
+          :sort_order          => 'asc',
+          :height              => "'auto'",
           :gridview            => 'false',
           :error_handler       => 'null',
           :inline_edit_handler => 'null',
           :add                 => 'false',
           :delete              => 'false',
-          :search              => 'true',
+          :search              => 'false',
           :edit                => 'false',
           :inline_edit         => 'false',
           :autowidth           => 'false',
@@ -256,7 +257,17 @@ module Hexagile
         var lastsel;
         jQuery(document).ready(function(){
         var mygrid = jQuery("##{id}").jqGrid({
-            url:'#{action}#{action.include?('?') ? '&' : '?'}q=1',
+            url:'#{action}#{action.include?('?') ? '&' : '?'}',
+            xmlReader: { 
+              root: "rows", 
+              row: "row", 
+              page: "rows>currentpage", 
+              total: "rows>totalpages", 
+              records : "rows>totalrecords", 
+              repeatitems: true, 
+              cell: "cell", 
+              id: "[id]"
+            },
             editurl:'#{options[:edit_url]}',
             colNames:#{col_names},
             colModel:#{col_model},
