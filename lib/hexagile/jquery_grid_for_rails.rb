@@ -11,7 +11,7 @@ module Hexagile
       col_model = '['
       columns.each do |c|
         col_names << "'#{c.delete(:label)}',"
-        col_model << "{%s}" % c.map{|a,b|"#{a.to_s}:'#{b.to_s}'"} * ', ')
+        col_model << "{%s}," % (c.map{|a,b|"#{a.to_s}:'#{b.to_s}'"} * ', ')
       end
       col_names.chop! << "]"
       col_model.chop! << "]"
@@ -220,7 +220,6 @@ module Hexagile
         		jQuery("#"+subgrid_table_id).jqGrid({
         			url:"#{options[:subgrid][:url]}?q=2&id="+row_id,
               editurl:'#{options[:subgrid][:edit_url]}?parent_id='+row_id,
-        			datatype: "json",
         			colNames: #{sub_col_names},
         			colModel: #{sub_col_model},
         		   	rowNum:#{options[:subgrid][:rows_per_page]},
@@ -259,7 +258,6 @@ module Hexagile
         var mygrid = jQuery("##{id}").jqGrid({
             url:'#{action}#{action.include?('?') ? '&' : '?'}q=1',
             editurl:'#{options[:edit_url]}',
-            datatype: "json",
             colNames:#{col_names},
             colModel:#{col_model},
             pager: '##{id}_pager',
