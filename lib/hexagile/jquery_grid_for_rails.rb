@@ -3,8 +3,9 @@ module Hexagile
     def jquery_grid(id, options={})
       yaml = ERB.new(File.open("#{RAILS_ROOT}/config/jquery_grid/#{id}.yml.erb", 'r').read).result(controller.send(:binding))
       grid_data = YAML::load(yaml)
+      options=grid_data.merge(options)
 
-      jqgrid(options[:title]||id.to_s,id.to_s,options.delete(:url),grid_data.delete(:columns),grid_data.merge(options))
+      jqgrid(options[:title]||id.to_s,id.to_s,options.delete(:url),options.delete(:columns),options)
     end
 
     def gen_columns(columns)
