@@ -12,6 +12,9 @@ module Hexagile
       col_names = '['
       col_model = '['
       columns.each do |c|
+        raise "index is required for all columns -- #{c.inspect}" unless c[:index]
+        c[:label] ||= c[:index].humanize
+        c[:name] ||= c[:index]
         col_names << "'#{c.delete(:label)}',"
         col_model << "{%s}," % (c.map{|a,b|"#{a.to_s}: #{b.to_json}"} * ', ')
       end
