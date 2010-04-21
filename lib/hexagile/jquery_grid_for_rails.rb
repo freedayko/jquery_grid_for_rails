@@ -24,7 +24,7 @@ module Hexagile
     end
     
     def jqgrid(title, id, action, columns = [], options = {})
-
+      options.reject!{|key,value|value.nil?}
       # Default options
       options =
         {
@@ -332,28 +332,26 @@ module Hexagile
     def update_pagination_state_with_params!(restraining_model = nil)
       model_klass = (restraining_model.is_a?(Class) || restraining_model.nil? ? restraining_model : restraining_model.to_s.classify.constantize)
       pagination_state = previous_pagination_state(model_klass)
-      limit = (params[:rows] || pagination_state[:limit] || 25).to_i
-      offset = params[:page] ? ((params[:page].to_i - 1)*limit) : (( pagination_state[:offset] || 0).to_i)
-      pagination_state.merge!({
-              :sort_field => (params[:sidx] || pagination_state[:sort_field] || "#{restraining_model.table_name}.id").sub(/(\A[^\[]*)\[([^\]]*)\]/,'\2'), # fields may be passed as "object[attr]"
-              :sort_direction => (params[:sord] || pagination_state[:sort_direction]).to_s.upcase,
-              :offset => offset,
-              :limit => limit
-      })
-      # allow only valid sort_fields matching column names of the given model ...
-      unless model_klass.nil? || model_klass.column_names.include?(pagination_state[:sort_field])
-        pagination_state.delete(:sort_field)
-        pagination_state.delete(:sort_direction)
+      per_page = params[:rows] || pagination_state[:per_page] || 25
+      page = params[:page] || pagination_state[:page] || 1
+      order = if !params[:sidx].nil? && !params[:sidx].empty? && !params[:sord].nil? && !params[:sord].empty?
+        "#{params[:sidx].sub(/(\A[^\[]*)\[([^\]]*)\]/,'\2')} #{params[:sord]}"
+      elsif pagination_state[:order]
+        pagination_state[:order]
+      else
+        "#{restraining_model.table_name}.id ASC"
       end
-      # ... and valid sort_directions
-      pagination_state.delete(:sort_direction) unless %w(ASC DESC).include?(pagination_state[:sort_direction])
-
+      pagination_state.merge!({
+              :page => page,
+              :per_page => per_page,
+              :order => order
+      })
       save_pagination_state(pagination_state, model_klass)
     end
 
     def options_from_pagination_state(pagination_state)
-      find_options = { :offset => pagination_state[:offset],
-                       :limit  => pagination_state[:limit] }
+      find_options = { :page => pagination_state[:page],
+                       :per_page  => pagination_state[:per_page] }
       find_options.merge!(
               :order => "#{pagination_state[:sort_field]} #{pagination_state[:sort_direction]}"
       ) unless pagination_state[:sort_field].blank?
